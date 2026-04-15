@@ -7,10 +7,11 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { href: '#trade', label: 'Trade' },
-    { href: '#how', label: 'How It Works' },
-    { href: '#ecosystem', label: 'Ecosystem' },
-    { href: '#white', label: 'WHITE', highlight: true },
+    { href: '/#trade', label: 'Trade' },
+    { href: '/#how', label: 'How It Works' },
+    { href: '/#ecosystem', label: 'Ecosystem' },
+    { href: '/wristband', label: 'Wristband' },
+    { href: '/#white', label: 'WHITE', highlight: true },
   ];
 
   return (
@@ -19,7 +20,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center">
               <span className="text-slate-900 font-bold text-xs sm:text-sm">G</span>
             </div>
             <span className="text-lg sm:text-xl font-semibold">

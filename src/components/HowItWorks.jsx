@@ -12,7 +12,7 @@ const steps = [
   {
     num: '03',
     title: 'Own It On-Chain',
-    text: 'Your GSG or GSS tokens appear in your wallet immediately. Hold them. Transfer them. Sell them back at the live price. Request physical delivery when you are ready.',
+    text: 'Your GSG or GSS tokens appear in your wallet immediately. Hold them. Transfer them. Sell them back at the live price. For physical delivery, you join the 1kg community queue and oracles auto-select the cheapest verified supplier.',
   },
 ];
 

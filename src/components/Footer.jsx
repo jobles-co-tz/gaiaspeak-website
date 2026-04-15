@@ -26,6 +26,9 @@ export function Footer() {
             <a href="#white" className="text-[10px] sm:text-xs text-white/80 hover:text-white uppercase tracking-wider transition-colors">
               WHITE
             </a>
+            <a href="/wristband" className="text-[10px] sm:text-xs text-slate-500 hover:text-amber-400 uppercase tracking-wider transition-colors">
+              Wristband
+            </a>
             <a
               href="https://amoy.polygonscan.com"
               target="_blank"

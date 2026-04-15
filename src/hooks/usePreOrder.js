@@ -1,5 +1,4 @@
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { parseUnits } from 'viem';
 import { useState, useCallback, useMemo } from 'react';
 import { 
   GAIASPEAK_TOKENS, 

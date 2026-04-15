@@ -4,6 +4,12 @@ import { useAccount } from 'wagmi';
 import { PreOrderModal } from '../components/PreOrderModal';
 import { getReservationCount } from '../config/supabase';
 
+const braceletImages = [
+  '/b_1.jpeg',
+  '/b_2.jpeg',
+  '/b_3.jpeg',
+];
+
 const features = [
   { icon: '📱', title: 'App Integration', desc: 'Full sync with GaiaSpeak mobile app' },
   { icon: '💳', title: 'Payment Function', desc: 'Tap-to-pay with your GSG/GSS tokens' },
@@ -18,6 +24,7 @@ export function PreOrderPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orderCount, setOrderCount] = useState(0);
   const [isLoadingCount, setIsLoadingCount] = useState(true);
+  const [currentImage, setCurrentImage] = useState(0);
 
   useEffect(() => {
     async function fetchCount() {
@@ -29,6 +36,14 @@ export function PreOrderPage() {
       setIsLoadingCount(false);
     }
     fetchCount();
+  }, []);
+
+  // Auto-rotate images
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImage((prev) => (prev + 1) % braceletImages.length);
+    }, 4000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -73,8 +88,39 @@ export function PreOrderPage() {
             </div>
           </div>
 
-          {/* Product Visual */}
-          
+          {/* Product Visual - Image Carousel */}
+          <div className="relative mb-12">
+            <div className="relative aspect-[4/3] sm:aspect-video rounded-2xl overflow-hidden border border-slate-700/30">
+              {/* Images */}
+              {braceletImages.map((src, index) => (
+                <img
+                  key={src}
+                  src={src}
+                  alt={`WHITE Bracelet ${index + 1}`}
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+                    index === currentImage ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+              ))}
+              {/* Overlay gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+            </div>
+
+            {/* Image Indicators */}
+            <div className="flex justify-center gap-2 mt-4">
+              {braceletImages.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentImage(index)}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    index === currentImage
+                      ? 'bg-white w-6'
+                      : 'bg-white/30 hover:bg-white/50'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
 
           {/* Features Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-12">
@@ -92,7 +138,7 @@ export function PreOrderPage() {
 
           {/* CTA */}
           <div className="text-center">
-            <div className="inline-flex flex-col items-center gap-4 p-6 rounded-xl bg-gradient-to-r from-slate-800/50 via-slate-800/30 to-slate-800/50 border border-slate-700/30">
+            <div className="inline-flex flex-col items-center gap-4 p-6 rounded-xl bg-linear-to-r from-slate-800/50 via-slate-800/30 to-slate-800/50 border border-slate-700/30">
               <div className="text-center">
                 <h3 className="text-xl font-semibold text-slate-100 mb-2">Reserve Your Bracelet</h3>
                 <p className="text-slate-400 text-sm">Hold GSG or GSS tokens to qualify for pre-order</p>

@@ -38,8 +38,12 @@ export function PreOrderModal({ isOpen, onClose }) {
   // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
-      resetStatus();
-      setFormErrors({});
+      const timeoutId = window.setTimeout(() => {
+        resetStatus();
+        setFormErrors({});
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
     }
   }, [isOpen, resetStatus]);
 
