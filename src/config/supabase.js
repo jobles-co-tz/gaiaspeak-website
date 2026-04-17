@@ -445,6 +445,138 @@ export async function getAllReservations() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Gold suppliers directory CRUD (admin panel)
+// ---------------------------------------------------------------------------
+
+const MOCK_SUPPLIERS = [
+  {
+    id: 'mock-supplier-1',
+    name: 'Atlas Bullion',
+    country: 'Switzerland',
+    contact_email: 'trade@atlasbullion.ch',
+    contact_phone: '+41 22 555 0111',
+    website: 'https://atlasbullion.example',
+    price_per_gram: 72.9,
+    currency: 'USD',
+    min_order_grams: 500,
+    lead_time_days: 7,
+    verified: true,
+    active: true,
+    notes: 'LBMA Good Delivery refiner.',
+    created_at: new Date().toISOString(),
+  },
+];
+
+export async function getAllGoldSuppliers() {
+  if (!supabase) {
+    return { success: true, suppliers: MOCK_SUPPLIERS, mock: true };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('gold_suppliers')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { success: true, suppliers: data || [] };
+  } catch (error) {
+    console.error('Error fetching gold suppliers:', error);
+    return { success: false, error: error.message, suppliers: [] };
+  }
+}
+
+export async function createGoldSupplier(payload) {
+  if (!payload?.name?.trim()) {
+    return { success: false, error: 'Supplier name is required' };
+  }
+
+  if (!supabase) {
+    return {
+      success: true,
+      mock: true,
+      supplier: { id: `mock-${Date.now()}`, ...payload, created_at: new Date().toISOString() },
+    };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('gold_suppliers')
+      .insert([{
+        name: payload.name.trim(),
+        country: payload.country || null,
+        contact_email: payload.contact_email || null,
+        contact_phone: payload.contact_phone || null,
+        website: payload.website || null,
+        price_per_gram: Number(payload.price_per_gram) || 0,
+        currency: payload.currency || 'USD',
+        min_order_grams: Number(payload.min_order_grams) || 1,
+        lead_time_days: Number(payload.lead_time_days) || 14,
+        verified: Boolean(payload.verified),
+        active: payload.active !== false,
+        notes: payload.notes || null,
+      }])
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return { success: true, supplier: data };
+  } catch (error) {
+    console.error('Error creating gold supplier:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateGoldSupplier(id, updates) {
+  if (!id) return { success: false, error: 'Supplier id is required' };
+
+  if (!supabase) {
+    return { success: true, mock: true, supplier: { id, ...updates } };
+  }
+
+  try {
+    const patch = { ...updates };
+    if ('price_per_gram' in patch) patch.price_per_gram = Number(patch.price_per_gram) || 0;
+    if ('min_order_grams' in patch) patch.min_order_grams = Number(patch.min_order_grams) || 1;
+    if ('lead_time_days' in patch) patch.lead_time_days = Number(patch.lead_time_days) || 14;
+
+    const { data, error } = await supabase
+      .from('gold_suppliers')
+      .update(patch)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return { success: true, supplier: data };
+  } catch (error) {
+    console.error('Error updating gold supplier:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteGoldSupplier(id) {
+  if (!id) return { success: false, error: 'Supplier id is required' };
+
+  if (!supabase) {
+    return { success: true, mock: true };
+  }
+
+  try {
+    const { error } = await supabase
+      .from('gold_suppliers')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting gold supplier:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 /*
 Supabase Table Schema (run this in Supabase SQL Editor):
 

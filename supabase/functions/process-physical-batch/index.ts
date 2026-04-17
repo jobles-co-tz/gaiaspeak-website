@@ -11,11 +11,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const suppliers = [
-  { name: 'Atlas Bullion', verified: true, pricePerGram: 73.8 },
-  { name: 'Auric Trust Metals', verified: true, pricePerGram: 72.9 },
-  { name: 'NovaMint Cooperative', verified: true, pricePerGram: 74.1 },
-];
+// Oracle service: when a 1kg physical-gold batch fills up, query the
+// gold_suppliers directory and pick the verified + active supplier with the
+// smallest price_per_gram. That supplier is assigned to the closing batch and
+// all queued delivery requests are moved to status = 'supplier_selected'.
+
+async function selectCheapestSupplier(admin: ReturnType<typeof createClient>, collectedGrams: number) {
+  // Pull every verified + active supplier, order by price ascending, take top 1.
+  // We also filter by min_order_grams so we only match suppliers willing to
+  // fulfil this batch size.
+  const { data: candidates, error } = await admin
+    .from('gold_suppliers')
+    .select('id, name, price_per_gram, currency, min_order_grams, lead_time_days, country')
+    .eq('verified', true)
+    .eq('active', true)
+    .lte('min_order_grams', collectedGrams)
+    .order('price_per_gram', { ascending: true })
+    .order('lead_time_days', { ascending: true });
+
+  if (error) throw error;
+
+  const sorted = candidates || [];
+  return {
+    selected: sorted[0] || null,
+    candidates: sorted,
+  };
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -66,16 +87,46 @@ serve(async (req) => {
       );
     }
 
-    const verifiedSuppliers = suppliers.filter((supplier) => supplier.verified);
-    const selectedSupplier = verifiedSuppliers.sort((a, b) => a.pricePerGram - b.pricePerGram)[0];
+    const { selected: selectedSupplier, candidates } = await selectCheapestSupplier(admin, collected);
+
+    if (!selectedSupplier) {
+      // No eligible supplier — leave the batch collecting so the admin can add one.
+      return new Response(
+        JSON.stringify({
+          success: false,
+          triggered: false,
+          message: 'No verified + active supplier available for this batch size. Batch left open.',
+          collected,
+          target,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const competitors = candidates
+      .slice(1, 4)
+      .map((c) => `${c.name} @ ${Number(c.price_per_gram).toFixed(2)} ${c.currency || 'USD'}/g`)
+      .join(', ');
+
+    const oracleNote = [
+      `Cheapest verified supplier selected from gold_suppliers directory.`,
+      `Winner: ${selectedSupplier.name} @ ${Number(selectedSupplier.price_per_gram).toFixed(2)} ${selectedSupplier.currency || 'USD'}/g.`,
+      `Candidates evaluated: ${candidates.length}.`,
+      competitors ? `Next best: ${competitors}.` : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
 
     const { error: closeBatchError } = await admin
       .from('physical_delivery_batches')
       .update({
         status: 'completed',
         supplier_name: selectedSupplier.name,
-        supplier_price_per_gram: selectedSupplier.pricePerGram,
-        oracle_note: 'Mock oracle selected cheapest verified supplier automatically at 1kg threshold.',
+        supplier_price_per_gram: selectedSupplier.price_per_gram,
+        oracle_note: oracleNote,
         closed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -118,7 +169,15 @@ serve(async (req) => {
         success: true,
         triggered: true,
         batchId: activeBatch.id,
-        supplier: selectedSupplier,
+        supplier: {
+          id: selectedSupplier.id,
+          name: selectedSupplier.name,
+          pricePerGram: Number(selectedSupplier.price_per_gram),
+          currency: selectedSupplier.currency || 'USD',
+          country: selectedSupplier.country,
+          leadTimeDays: selectedSupplier.lead_time_days,
+        },
+        candidatesConsidered: candidates.length,
         requestCount: assignedRequests?.length || 0,
       }),
       {

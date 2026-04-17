@@ -88,8 +88,8 @@ export const PROTOCOL_STAGES = {
 
 // Token distribution percentages
 export const TOKEN_DISTRIBUTION = {
-  reserve: 87.11,
-  operations: 11.88,
+  reserve: 0.99,
+  operations: 98, 
   founder: 1.0,
   pioneers: 0.01,
 };

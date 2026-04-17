@@ -10,12 +10,12 @@ const braceletImages = [
 
 const features = [
   {
-    icon: '�️',
+    icon: '🛰️',
     title: 'Autonomous + On-chain',
     desc: 'Self-directed wearable logic with secure blockchain identity',
   },
   {
-    icon: '�',
+    icon: '🔆',
     title: 'Laser UX + NFT Tap',
     desc: 'Projected controls and one-touch NFT creation',
   },
@@ -24,6 +24,26 @@ const features = [
     title: 'Climate + Health Signals',
     desc: 'Wellness metrics and environmental sensing in one form factor',
   },
+];
+
+// Compact feature tiles shown directly under the heading — pulled from the v2.1 spec.
+const tinyFeatures = [
+  { icon: '🔦', label: 'Laser projection' },
+  { icon: '🧠', label: 'GaiaSpeak OS' },
+  { icon: '🔋', label: 'Hybrid energy' },
+  { icon: '📡', label: 'Satellite IoT' },
+  { icon: '🕸️', label: 'Mesh + LoRa' },
+  { icon: '🎵', label: 'Solfeggio haptics' },
+  { icon: '❤️', label: 'Biometrics' },
+  { icon: '📷', label: 'Micro camera' },
+  { icon: '🎤', label: 'Voice + AI' },
+  { icon: '💡', label: 'LED flashlight' },
+  { icon: '💎', label: 'NFT minting' },
+  { icon: '🌊', label: 'IP67 / IP68' },
+  { icon: '🔐', label: 'Wallet-linked' },
+  { icon: '📱', label: 'No phone needed' },
+  { icon: '🔄', label: '180° flip UI' },
+  { icon: '⚡', label: 'Qi + MagSafe' },
 ];
 
 export function WhiteSection() {
@@ -66,6 +86,21 @@ export function WhiteSection() {
             A fast preview of our wearable layer. View the full product page for specs, visuals,
             and pre-order/interest access.
           </p>
+        </div>
+
+        {/* Tiny feature tiles */}
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5 mb-10 sm:mb-14">
+          {tinyFeatures.map((f) => (
+            <div
+              key={f.label}
+              className="aspect-square flex flex-col items-center justify-center gap-1 rounded-md border border-slate-700/40 bg-slate-800/30 hover:border-white/30 hover:bg-slate-800/60 transition-colors p-1.5 text-center"
+            >
+              <span className="text-base sm:text-lg leading-none">{f.icon}</span>
+              <span className="text-[9px] sm:text-[10px] text-slate-400 leading-tight">
+                {f.label}
+              </span>
+            </div>
+          ))}
         </div>
 
         {/* Product Visual - Image Carousel */}
