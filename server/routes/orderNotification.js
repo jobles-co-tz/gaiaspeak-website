@@ -1,59 +1,25 @@
-// Supabase Edge Function to send order notification emails
-// Uses Resend for email delivery (free tier: 3,000 emails/month)
+// server/routes/orderNotification.js
+// POST /api/send-order-notification — email admin about a new bracelet order.
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { Router } from 'express';
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+export const orderNotificationRouter = Router();
 
-interface Reservation {
-  id: string;
-  wallet_address: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  country: string;
-  city: string;
-  street_address: string;
-  postal_code: string;
-  quantity: number;
-  size?: string;
-  color?: string;
-  notes?: string;
-  tx_hash?: string;
-  created_at: string;
-}
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 
-serve(async (req) => {
-  // Handle CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      },
-    });
-  }
-
+orderNotificationRouter.post('/send-order-notification', async (req, res) => {
   try {
-    const { reservation, adminEmail } = await req.json() as {
-      reservation: Reservation;
-      adminEmail: string;
-    };
+    const { reservation, adminEmail } = req.body;
 
     if (!RESEND_API_KEY) {
       console.error('RESEND_API_KEY not configured');
-      return new Response(JSON.stringify({ error: 'Email service not configured' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return res.status(500).json({ error: 'Email service not configured' });
     }
 
-    // Format the email body
     const emailHtml = `
       <h2>🎉 New WHITE Bracelet Pre-Order!</h2>
       <p>A new reservation has been placed on GaiaSpeak.</p>
-      
+
       <h3>Order Details</h3>
       <table style="border-collapse: collapse; width: 100%; max-width: 600px;">
         <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Order ID</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${reservation.id}</td></tr>
@@ -88,42 +54,30 @@ serve(async (req) => {
       </p>
     `;
 
-    // Send email via Resend
-    const res = await fetch('https://api.resend.com/emails', {
+    const emailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'GaiaSpeak <orders@gaiaspeak.io>', // Change to your verified domain
+        from: 'GaiaSpeak <orders@gaiaspeak.io>',
         to: [adminEmail],
         subject: `🎉 New WHITE Bracelet Order - ${reservation.full_name}`,
         html: emailHtml,
       }),
     });
 
-    const data = await res.json();
+    const data = await emailRes.json();
 
-    if (!res.ok) {
+    if (!emailRes.ok) {
       console.error('Resend error:', data);
-      return new Response(JSON.stringify({ error: 'Failed to send email', details: data }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return res.status(500).json({ error: 'Failed to send email', details: data });
     }
 
-    return new Response(JSON.stringify({ success: true, emailId: data.id }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-  } catch (error) {
-    console.error('Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.json({ success: true, emailId: data.id });
+  } catch (err) {
+    console.error('Error:', err);
+    return res.status(500).json({ error: err.message });
   }
 });
-

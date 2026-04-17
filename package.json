@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:server": "node --env-file=.env server/index.js",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node --env-file=.env server/index.js"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.10",
@@ -16,7 +18,10 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.14.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
     "ethers": "^6.13.0",
+    "express": "^4.21.2",
     "node-cron": "^3.0.3",
     "viem": "^2.47.12",
     "wagmi": "^2.19.5"

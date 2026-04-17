@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../config/supabase";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export function SupplierSubmitPage() {
   const { supplierId } = useParams();
@@ -62,7 +62,7 @@ export function SupplierSubmitPage() {
 
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/functions/v1/submit-supplier-prices`,
+        `${API_URL}/api/submit-supplier-prices`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
