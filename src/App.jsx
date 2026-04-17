@@ -11,6 +11,7 @@ import { Footer } from './components/Footer';
 import { PreOrderPage } from './pages/PreOrderPage';
 import { AdminPage } from './pages/AdminPage';
 import { WristbandPage } from './pages/WristbandPage';
+import { SupplierSubmitPage } from './pages/SupplierSubmitPage';
 
 function HomePage() {
   return (
@@ -44,6 +45,7 @@ function App() {
         <Route path="/preorder" element={<PreOrderPage />} />
         <Route path="/wristband" element={<WristbandPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/suppliers/:supplierId/submit-prices" element={<SupplierSubmitPage />} />
       </Routes>
     </BrowserRouter>
   );
