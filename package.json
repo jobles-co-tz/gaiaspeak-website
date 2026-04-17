@@ -16,6 +16,8 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.14.0",
+    "ethers": "^6.13.0",
+    "node-cron": "^3.0.3",
     "viem": "^2.47.12",
     "wagmi": "^2.19.5"
   },
