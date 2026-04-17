@@ -362,13 +362,16 @@ export async function saveReservation(data) {
 
     if (error) throw error;
 
-    // Send admin notification email via Edge Function
+    // Send admin notification email via Node email server
     try {
-      await supabase.functions.invoke('send-order-notification', {
-        body: {
+      const emailServerUrl = import.meta.env.VITE_EMAIL_SERVER_URL || 'http://localhost:3001';
+      await fetch(`${emailServerUrl}/api/send-order-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           reservation: result,
-          adminEmail: ADMIN_EMAIL
-        }
+          adminEmail: ADMIN_EMAIL,
+        }),
       });
     } catch (emailError) {
       // Don't fail the reservation if email fails - just log it

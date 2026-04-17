@@ -1,30 +1,66 @@
 // oracle/scheduler.js
-// Every 4 hours: calls the notify-supplier-prices edge function to email
-// all active suppliers a link to update their prices, then pushes the
-// latest prices on-chain.
+// Every 4 hours: fetches active suppliers from Supabase, sends their data
+// to the Node email server which emails each one, logs results back to
+// Supabase, then pushes the latest prices on-chain.
 //
 // Manual trigger: node oracle/scheduler.js --run-now
 
 import cron from 'node-cron';
+import { createClient } from '@supabase/supabase-js';
 import { pushPrices } from './pushPrices.js';
 
 const SCHEDULE = '0 */4 * * *'; // every 4 hours on the hour
 
-async function notifySuppliers() {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) throw new Error('Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+function getSupabaseAdmin() {
+  const url = process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  return createClient(url, key);
+}
 
-  const res = await fetch(`${supabaseUrl}/functions/v1/notify-supplier-prices`, {
+async function notifySuppliers() {
+  const admin = getSupabaseAdmin();
+  const emailServerUrl = process.env.EMAIL_SERVER_URL || 'http://localhost:3001';
+
+  // 1. Fetch active suppliers from Supabase
+  const { data: suppliers, error } = await admin
+    .from('gold_suppliers')
+    .select('id, name, contact_email')
+    .eq('active', true)
+    .not('contact_email', 'is', null);
+
+  if (error) throw error;
+  if (!suppliers || suppliers.length === 0) {
+    return { sent: 0, total: 0, message: 'No active suppliers with email found' };
+  }
+
+  // 2. Send suppliers to the email server (email-only)
+  const res = await fetch(`${emailServerUrl}/api/notify-supplier-prices`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${serviceKey}`,
-    },
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ suppliers }),
   });
 
   const body = await res.json();
   if (!res.ok) throw new Error(body.error || `Notify failed (${res.status})`);
+
+  // 3. Log each result back to Supabase
+  if (body.results) {
+    for (const r of body.results) {
+      const { error: logErr } = await admin
+        .from('supplier_notifications')
+        .insert({
+          supplier_id: r.id,
+          email: r.email,
+          status: r.status === 'sent' ? 'sent' : 'failed',
+          error_message: r.error || null,
+        });
+      if (logErr) {
+        console.error(`[scheduler] Failed to log notification for ${r.name}:`, logErr.message);
+      }
+    }
+  }
+
   return body;
 }
 
